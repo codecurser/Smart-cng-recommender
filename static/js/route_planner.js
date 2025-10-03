@@ -3,6 +3,9 @@ let routeLayer;
 let markersLayer;
 let destinationMarker;
 let sourceMarker;
+let externalStationsLayer;
+let externalStationMarkers = [];
+let allowStationPopups = false;
 
 // Initialize map
 function initializeMap() {
@@ -13,6 +16,9 @@ function initializeMap() {
     
     markersLayer = L.layerGroup().addTo(routeMap);
     routeLayer = L.layerGroup().addTo(routeMap);
+    externalStationsLayer = L.layerGroup().addTo(routeMap);
+    // Ensure no popups are open initially
+    routeMap.closePopup();
 
     // Add click event to map
     routeMap.on('click', handleMapClick);
@@ -41,21 +47,13 @@ function handleMapClick(e) {
 
 // Handle current location
 function getCurrentLocation() {
-    if (!navigator.geolocation) {
-        alert('Geolocation is not supported by your browser');
-        return;
-    }
+    const startInput = document.getElementById('start-location');
+    const locateBtn = document.querySelector('.location-btn');
 
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            // Update source marker
+    const onLocated = (lat, lng) => {
             if (sourceMarker) {
                 routeMap.removeLayer(sourceMarker);
             }
-
             sourceMarker = L.marker([lat, lng], {
                 icon: L.icon({
                     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
@@ -63,36 +61,145 @@ function getCurrentLocation() {
                     iconAnchor: [12, 41]
                 })
             }).addTo(routeMap);
+        startInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        routeMap.setView([lat, lng], 13);
+    };
 
-            // Update start location input field
-            document.getElementById('start-location').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            
-            // Center map on current location
-            routeMap.setView([lat, lng], 13);
+    const enableBtn = () => { if (locateBtn) { locateBtn.disabled = false; locateBtn.classList.remove('is-loading'); } };
+    const disableBtn = () => { if (locateBtn) { locateBtn.disabled = true; locateBtn.classList.add('is-loading'); } };
+
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser. You can manually enter coordinates or allow location access.');
+        return;
+    }
+
+    disableBtn();
+
+    const geoOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            enableBtn();
+            onLocated(position.coords.latitude, position.coords.longitude);
         },
-        (error) => {
-            alert('Error getting your location: ' + error.message);
-        }
+        async (error) => {
+            // Map error codes to friendly messages
+            let msg = '';
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    msg = 'Location permission denied. Please allow access in your browser settings.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    msg = 'Location unavailable. Trying a network-based fallback...';
+                    break;
+                case error.TIMEOUT:
+                    msg = 'Location request timed out. Retrying with lower accuracy...';
+                    break;
+                default:
+                    msg = 'Could not get your location. Trying a fallback...';
+            }
+
+            // Inform user
+            console.warn(msg);
+
+            // If timeout, retry once with lower accuracy
+            if (error.code === error.TIMEOUT) {
+                try {
+                    const retryPos = await new Promise((resolve, reject) =>
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 })
+                    );
+                    enableBtn();
+                    return onLocated(retryPos.coords.latitude, retryPos.coords.longitude);
+                } catch (_) { /* fall through to IP fallback */ }
+            }
+
+            // If permission denied, do not try IP fallback automatically (privacy). Just notify and exit.
+            if (error.code === error.PERMISSION_DENIED) {
+                enableBtn();
+                alert('Location permission denied. Enter coordinates manually or allow location access and try again.');
+                return;
+            }
+
+            // Fallback: approximate IP-based geolocation
+            try {
+                const resp = await fetch('https://ipapi.co/json/');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.latitude && data.longitude) {
+                        enableBtn();
+                        return onLocated(data.latitude, data.longitude);
+                    }
+                }
+                throw new Error('IP geolocation failed');
+            } catch (e) {
+                enableBtn();
+                alert('Unable to determine your location. Please enter the coordinates manually (lat, lng).');
+            }
+        },
+        geoOptions
     );
 }
 
-// CNG Models database (simplified) - Remove 'kg/min' from filling speed values
+// Load external stations from backend and render on map
+async function loadExternalStations() {
+    try {
+        const resp = await fetch('/api/stations-from-file');
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Failed to load stations');
+
+        externalStationsLayer.clearLayers();
+        externalStationMarkers = [];
+        const pumpIcon = L.icon({
+            iconUrl: 'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41]
+        });
+
+        data.stations.forEach((s) => {
+            const lat = s.position?.lat;
+            const lng = s.position?.lng;
+            if (typeof lat !== 'number' || typeof lng !== 'number') return;
+            const marker = L.marker([lat, lng], { icon: pumpIcon })
+                .addTo(externalStationsLayer)
+                .bindPopup(`<strong>${(s.name || 'CNG Station')}</strong>`);
+            // Disable popups before search; enable after search
+            marker.on('click', (e) => {
+                if (!allowStationPopups) return;
+                e.target.openPopup();
+            });
+            // Hide markers until route is planned
+            marker.setOpacity(0);
+            externalStationMarkers.push(marker);
+        });
+    } catch (e) {
+        console.error('Station load failed:', e);
+    }
+}
+
+// CNG Models database aligned with dropdown values and backend expectations
+// Units: tankCapacity (kg), range (km), fillingSpeed (kg/min), consumption (kg/km)
 const cngModels = {
-    tesla_model_3: {
-        name: "Tesla Model 3",
-        batteryCapacity: 82, // kWh
-        range: 358, // km
-        fillingSpeed: 250, // kg/min (removed 'kg/min' suffix)
-        consumption: 0.229 // kWh/km
+    maruti_wagonr_cng: {
+        name: "Maruti WagonR CNG",
+        tankCapacity: 60,
+        range: 300,
+        fillingSpeed: 10,
+        consumption: 0.20
     },
-    nissan_leaf: {
-        name: "Nissan Leaf",
-        batteryCapacity: 62,
-        range: 385,
-        fillingSpeed: 100, // kg/min (removed 'kg/min' suffix)
-        consumption: 0.161
+    hyundai_santro_cng: {
+        name: "Hyundai Santro CNG",
+        tankCapacity: 60,
+        range: 320,
+        fillingSpeed: 10,
+        consumption: 0.19
     },
-    // Add more CNG models
+    tata_tiago_cng: {
+        name: "Tata Tiago CNG",
+        tankCapacity: 60,
+        range: 330,
+        fillingSpeed: 11,
+        consumption: 0.18
+    }
 };
 
 // Add this function to calculate the actual route
@@ -282,6 +389,9 @@ document.getElementById('route-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     clearPreviousRoute();
+    // Hide popups before searching
+    allowStationPopups = false;
+    routeMap.closePopup();
     
     const startLocation = document.getElementById('start-location').value;
     const endLocation = document.getElementById('end-location').value;
@@ -343,6 +453,9 @@ document.getElementById('route-form').addEventListener('submit', async (e) => {
         
         if (data.fillingStops) {
             displayRoute(routeData, data.fillingStops);
+            // Reveal only nearest 2 stations to the destination and open nearest popup
+            const endPoint = routeData.coordinates[routeData.coordinates.length - 1];
+            updateNearestStationsVisibility(endPoint[0], endPoint[1], 2);
         } else {
             throw new Error('No CNG filling stops returned');
         }
@@ -354,4 +467,20 @@ document.getElementById('route-form').addEventListener('submit', async (e) => {
 });
 
 // Initialize map when page loads
-document.addEventListener('DOMContentLoaded', initializeMap); 
+document.addEventListener('DOMContentLoaded', () => { initializeMap(); loadExternalStations(); });
+
+// Utility: find nearest station marker to a given lat/lng
+function updateNearestStationsVisibility(targetLat, targetLng, k = 2) {
+    if (!externalStationMarkers.length) return;
+    const target = L.latLng(targetLat, targetLng);
+    const scored = externalStationMarkers.map(m => ({ marker: m, d: target.distanceTo(m.getLatLng()) }));
+    scored.sort((a, b) => a.d - b.d);
+    // Hide all
+    externalStationMarkers.forEach(m => m.setOpacity(0));
+    // Show top k
+    const topK = scored.slice(0, k).map(s => s.marker);
+    topK.forEach(m => m.setOpacity(1));
+    // Enable popups and open nearest
+    allowStationPopups = true;
+    if (topK[0]) topK[0].openPopup();
+}

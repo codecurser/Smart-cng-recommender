@@ -40,7 +40,8 @@ class ChargingStationCalculator:
             'highway': 1.3      # >80 km/h
         }
 
-        self.battery_capacity = None  # Will be set when calculating charging stops
+        # For CNG semantics we treat 'battery_capacity' as tank capacity (kg)
+        self.battery_capacity = None
 
     def calculate_charging_stops(
         self,
@@ -50,10 +51,11 @@ class ChargingStationCalculator:
         available_stations: List[Dict[str, Any]]
     ) -> List[ChargingStop]:
         """Calculate optimal charging stops for the route"""
-        self.battery_capacity = ev_specs['batteryCapacity']
+        # Map CNG to internal fields
+        self.battery_capacity = ev_specs['batteryCapacity']  # kg (tank)
         total_distance = route_data['distance']
         route_coordinates = route_data['coordinates']
-        consumption_rate = ev_specs['consumption']
+        consumption_rate = ev_specs['consumption']  # kg/km
         
         # Initialize variables
         current_position = 0
@@ -93,7 +95,7 @@ class ChargingStationCalculator:
                 needed_charge = (remaining_distance * energy_per_km / self.battery_capacity * 100) + 30
                 optimal_charge = min(90, max(needed_charge, 80))
                 
-                # Calculate charging time
+                # Calculate filling time for CNG (kg/min)
                 charging_time = self._calculate_charging_time(
                     current_battery,
                     optimal_charge,
@@ -212,26 +214,14 @@ class ChargingStationCalculator:
         departure_charge: float,
         ev_specs: Dict[str, Any]
     ) -> int:
-        """Calculate charging time in minutes"""
-        battery_capacity = ev_specs['batteryCapacity']
-        max_charging_speed = ev_specs['chargingSpeed']
-        
-        # Calculate energy needed
-        energy_needed = (departure_charge - arrival_charge) / 100 * battery_capacity
-        
-        # Account for charging curve
-        # Charging is faster at lower charge levels
-        avg_charging_speed = max_charging_speed * (
-            0.9 if arrival_charge < 40 else
-            0.7 if arrival_charge < 60 else
-            0.5 if arrival_charge < 80 else
-            0.3
-        )
-        
-        # Calculate time in hours and convert to minutes
-        charging_time = (energy_needed / avg_charging_speed) * 60
-        
-        return ceil(charging_time)
+        """Calculate CNG filling time in minutes based on tank capacity and fill rate"""
+        tank_capacity_kg = ev_specs['batteryCapacity']  # using mapped field
+        max_fill_speed = ev_specs['chargingSpeed']      # kg/min
+        fuel_needed_kg = (departure_charge - arrival_charge) / 100 * tank_capacity_kg
+        # Assume more linear fill vs EV charging curve
+        effective_speed = max_fill_speed * 0.9  # small overhead
+        fill_time_min = (fuel_needed_kg / max(effective_speed, 0.0001))
+        return ceil(fill_time_min)
 
     def _calculate_arrival_charge(self, current_charge: float, distance: float, consumption_rate: float) -> float:
         """Calculate the expected battery charge upon arrival at the charging station"""

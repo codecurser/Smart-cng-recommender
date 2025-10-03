@@ -9,6 +9,9 @@ from models.wait_time_predictor import WaitTimePredictor
 from dataclasses import dataclass
 from typing import Dict, Any
 from models.station_calculating_model import ChargingStationCalculator
+import os
+import pandas as pd
+import math
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -410,22 +413,31 @@ def plan_route():
         'distance': data['route']['distance'],
         'coordinates': data['route']['coordinates']
     }
-    ev_model = data['evModel']['name']  # Get the name instead of full object
-    current_charge = float(data['currentCharge'])
+    # Accept both old and new payload shapes
+    ev_model = data.get('evModel', {}).get('name') or data.get('cngModel', {}).get('name') or 'CNG Vehicle'
+    current_charge = float(data.get('currentCharge') or data.get('currentFuel'))
     
     # Create CNG specs from the received data
+    cng_payload = data.get('cngModel') or {}
     cng_specs = {
-        'tankCapacity': float(data['cngModel']['tankCapacity']),
-        'range': float(data['cngModel']['range']),
-        'fillingSpeed': float(data['cngModel']['fillingSpeed']),
-        'consumption': float(data['cngModel']['consumption'])
+        'tankCapacity': float(cng_payload.get('tankCapacity', 60)),
+        'range': float(cng_payload.get('range', 320)),
+        'fillingSpeed': float(cng_payload.get('fillingSpeed', 10)),
+        'consumption': float(cng_payload.get('consumption', 0.2))
     }
     
     try:
-        # Calculate CNG filling stops
+        # Map CNG specs to calculator's expected EV spec keys
+        ev_specs_mapped = {
+            'batteryCapacity': float(cng_specs['tankCapacity']),
+            'chargingSpeed': float(cng_specs['fillingSpeed']),
+            'consumption': float(cng_specs['consumption']),
+            'range': float(cng_specs['range'])
+        }
+
         filling_stops = station_calculator.calculate_charging_stops(
             route_data=route,
-            ev_specs=cng_specs,
+            ev_specs=ev_specs_mapped,
             current_charge=current_charge,
             available_stations=fetch_stations_in_bbox(calculate_route_bbox(route['coordinates']))
         )
@@ -469,33 +481,140 @@ def calculate_route_bbox(coordinates):
     }
 
 def fetch_stations_in_bbox(bbox):
-    """Fetch CNG stations within a bounding box"""
-    # Get the center point of the bbox
+    """Fetch CNG stations within a bounding box using provided file data"""
+    data = _read_stations_file()
+    stations = data.get('stations', [])
+    filtered_stations = []
     center_lat = (bbox['min_lat'] + bbox['max_lat']) / 2
     center_lng = (bbox['min_lng'] + bbox['max_lng']) / 2
-    
-    # Use the existing get_nearby_stations function
-    response = get_nearby_stations(center_lat, center_lng)
-    stations = response.get_json()['stations']
-    
-    # Filter stations within the bbox
-    filtered_stations = []
-    for station in stations:
-        lat = station['position']['lat']
-        lng = station['position']['lng']
+    for s in stations:
+        pos = s.get('position') or {}
+        lat = pos.get('lat')
+        lng = pos.get('lng')
+        if lat is None or lng is None:
+            continue
         if (bbox['min_lat'] <= lat <= bbox['max_lat'] and
             bbox['min_lng'] <= lng <= bbox['max_lng']):
             filtered_stations.append({
-                'name': station['name'],
+                'name': s.get('name', 'CNG Station'),
                 'lat': lat,
                 'lng': lng,
-                'type': station.get('type', 'Fast Charger'),
-                'power': station.get('power', '150kW'),
-                'active_chargers': station.get('active_chargers', 4),
-                'total_chargers': station.get('total_chargers', 6)
+                'type': 'CNG Pump',
+                'power': 'N/A',
+                'active_chargers': 1,
+                'total_chargers': 1
             })
-    
-    return filtered_stations
+    if filtered_stations:
+        return filtered_stations
+
+    # Fallback: pick nearest stations to bbox center if none in bbox
+    def haversine_km(lat1, lon1, lat2, lon2):
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+        return R * c
+
+    scored = []
+    for s in stations:
+        pos = s.get('position') or {}
+        lat = pos.get('lat')
+        lng = pos.get('lng')
+        if lat is None or lng is None:
+            continue
+        dist = haversine_km(center_lat, center_lng, lat, lng)
+        scored.append((dist, s))
+    scored.sort(key=lambda x: x[0])
+    nearest = []
+    for _, s in scored[:25]:
+        pos = s['position']
+        nearest.append({
+            'name': s.get('name', 'CNG Station'),
+            'lat': pos['lat'],
+            'lng': pos['lng'],
+            'type': 'CNG Pump',
+            'power': 'N/A',
+            'active_chargers': 1,
+            'total_chargers': 1
+        })
+    return nearest
+
+def _read_stations_file():
+    """Read stations from the provided Excel file and return as JSON.
+    Attempts to infer latitude/longitude/name columns case-insensitively.
+    """
+    try:
+        # Resolve file path relative to app root
+        # Try multiple known filenames in order
+        candidates = [
+            'Trimmed_CNG_Pump_Data (1).csv',
+            'Trimmed_CNG_Pump_Data (1).xlsx',
+            'Trimmed_CNG_Pump_Data.csv',
+            'Trimmed_CNG_Pump_Data.xlsx'
+        ]
+        base_dir = os.path.dirname(__file__)
+        use_path = None
+        for name in candidates:
+            p = os.path.join(base_dir, name)
+            if os.path.exists(p):
+                use_path = p
+                break
+        if not use_path:
+            return { 'error': 'File not found: ' + ', '.join(candidates), 'stations': [] }
+        filename = os.path.basename(use_path)
+        file_path = use_path
+
+        if file_path.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path)
+        # Normalize columns
+        lower_cols = { str(c).strip().lower(): c for c in df.columns }
+
+        # Heuristic detection of columns (including prefixed variants like @lat/@lon)
+        lat_col = next((lower_cols[c] for c in lower_cols if c in ['lat', 'latitude', 'latitutde', '@lat']), None)
+        lng_candidates = ['lng', 'lon', 'long', 'longitude', '@lon']
+        lng_col = next((lower_cols[c] for c in lower_cols if c in lng_candidates), None)
+        name_col = next((lower_cols[c] for c in lower_cols if c in ['name', '@name', 'station', 'station name', 'pump', 'cng pump', 'cng station', 'station_name']), None)
+
+        if not lat_col or not lng_col:
+            return { 'error': 'Latitude/Longitude columns not found in file', 'stations': [] }
+
+        # Build station list with robust numeric coercion and range checks
+        def coerce_num(val):
+            try:
+                if pd.isna(val):
+                    return None
+                if isinstance(val, (int, float)):
+                    return float(val)
+                s = str(val).strip().replace(',', '')
+                return float(s)
+            except Exception:
+                return None
+
+        stations = []
+        for _, row in df.iterrows():
+            lat = coerce_num(row.get(lat_col))
+            lng = coerce_num(row.get(lng_col))
+            if lat is None or lng is None:
+                continue
+            if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+                continue
+            name = str(row.get(name_col)).strip() if name_col and pd.notnull(row.get(name_col)) else 'CNG Station'
+            stations.append({ 'name': name, 'position': { 'lat': lat, 'lng': lng } })
+
+        return { 'stations': stations }
+    except Exception as e:
+        return { 'error': str(e), 'stations': [] }
+
+@app.route('/api/stations-from-file')
+def stations_from_file():
+    data = _read_stations_file()
+    status = 200
+    if data.get('error'):
+        status = 400 if 'not found' not in data['error'].lower() else 404
+    return jsonify(data), status
 
 if __name__ == '__main__':
     app.run(debug=True)
