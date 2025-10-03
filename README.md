@@ -129,9 +129,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 - Website: [chargewise.com](https://chargewise.com)
-- Email: support@chargewise.com
+- Email: aryansharma35x@gmail.com
 - Location: Sharda University, Greater Noida
-- Phone: +91 9503569583
+- Phone: +91 9412678204
 
 ---
 
