@@ -1,6 +1,7 @@
 let map;
 let userMarker = null;
 let stationMarkers = [];
+let allStationMarkers = [];
 let routingControl = null;
 let accuracyCircle = null;
 let isMapInitialized = false;
@@ -79,6 +80,9 @@ function initMap() {
     });
 
     isMapInitialized = true;
+
+    // Load all stations from CSV on initial page load
+    loadAllStationsFromFile();
 }
 
 function getCurrentLocation() {
@@ -86,48 +90,85 @@ function getCurrentLocation() {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
     button.disabled = true;
 
+    const done = () => resetLocationButton(button);
+
     if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser");
-        resetLocationButton(button);
-        return;
+        return done();
     }
 
-    navigator.geolocation.getCurrentPosition(
-        // Success callback
-        function(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            handleLocationSelect(lat, lng);
-            map.setView([lat, lng], 14);
-            resetLocationButton(button);
-        },
-        // Error callback
-        function(error) {
-            let errorMessage = "Error getting your location. ";
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage += "Please enable location services.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage += "Location unavailable.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessage += "Request timed out.";
-                    break;
-                default:
-                    errorMessage += "An unknown error occurred.";
+    const optionsHigh = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
+    const optionsLow = { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 };
+
+    const onSuccess = (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        handleLocationSelect(lat, lng);
+        map.setView([lat, lng], 14);
+        done();
+    };
+
+    const tryIpFallback = () => {
+        const withTimeout = (p, ms=4000) => Promise.race([
+            p,
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+        ]);
+        const providers = [
+            () => withTimeout(fetch('https://ipapi.co/json/').then(r => r.json())),
+            () => withTimeout(fetch('https://ipwho.is/').then(r => r.json()).then(d => ({ latitude: d.latitude, longitude: d.longitude }))),
+            () => withTimeout(fetch('https://geolocation-db.com/json/').then(r => r.json()).then(d => ({ latitude: parseFloat(d.latitude), longitude: parseFloat(d.longitude) }))),
+        ];
+        (async () => {
+            for (const p of providers) {
+                try {
+                    const data = await p();
+                    const lat = typeof data.latitude === 'number' ? data.latitude : parseFloat(data.latitude);
+                    const lng = typeof data.longitude === 'number' ? data.longitude : parseFloat(data.longitude);
+                    if (isFinite(lat) && isFinite(lng)) {
+                        handleLocationSelect(lat, lng);
+                        map.setView([lat, lng], 12);
+                        done();
+                        return;
+                    }
+                } catch {}
             }
-            alert(errorMessage);
-            resetLocationButton(button);
+            alert('Unable to determine your location. Click on the map to choose a point.');
+            done();
+        })();
+    };
+
+    const startGeo = () => navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+            if (err && err.code === err.TIMEOUT) {
+                navigator.geolocation.getCurrentPosition(onSuccess, () => tryIpFallback(), optionsLow);
+            } else if (err && err.code === err.POSITION_UNAVAILABLE) {
+                tryIpFallback();
+            } else if (err && err.code === err.PERMISSION_DENIED) {
+                alert('Location permission denied. You can click on the map to select a point.');
+                done();
+            } else {
+                tryIpFallback();
+            }
         },
-        // Options
-        {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-        }
+        optionsHigh
     );
+
+    try {
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+                if (status.state === 'denied') {
+                    alert('Location access is blocked for this site. Enable it in your browser settings, or click on the map to choose a point.');
+                    return tryIpFallback();
+                }
+                startGeo();
+            }).catch(() => startGeo());
+        } else {
+            startGeo();
+        }
+    } catch (_) {
+        startGeo();
+    }
 }
 
 function resetLocationButton(button) {
@@ -162,15 +203,18 @@ function fetchNearbyStations(lat, lng) {
     const stationList = document.getElementById('station-list');
     stationList.innerHTML = '<div class="loading">Finding CNG stations...</div>';
 
+    // Prefer server-side filtered endpoint
     fetch(`/api/stations/${lat}/${lng}?radius=${searchRadius}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                alert(data.error);
-                return;
+                throw new Error(data.error);
             }
-            // Filter stations within radius
-            const stations = filterStationsWithinRadius(data.stations, {lat, lng});
+            const stations = (data.stations || []).map(s => ({
+                name: s.name,
+                position: s.position,
+                _dist: s.distance_km
+            }));
             if (stations.length === 0) {
                 stationList.innerHTML = '<div class="no-stations">No CNG stations found within ' + searchRadius + 'km radius</div>';
             } else {
@@ -179,8 +223,59 @@ function fetchNearbyStations(lat, lng) {
         })
         .catch(error => {
             console.error('Error fetching stations:', error);
-            alert('Error fetching nearby stations. Please try again.');
+            // Fallback to client-side from file
+            fetch('/api/stations-from-file')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    const all = (data.stations || []).map(s => ({ name: s.name, position: s.position }));
+                    const within = all
+                        .map(s => ({...s, _dist: calculateDistance(lat, lng, s.position.lat, s.position.lng)}))
+                        .filter(s => s._dist <= searchRadius)
+                        .sort((a,b) => a._dist - b._dist);
+                    if (within.length === 0) {
+                        stationList.innerHTML = '<div class="no-stations">No CNG stations found within ' + searchRadius + 'km radius</div>';
+                    } else {
+                        displayStations(within);
+                    }
+                })
+                .catch(err => {
+                    stationList.innerHTML = '<div class="no-stations">Unable to load stations data.</div>';
+                });
         });
+}
+
+// Load and render ALL stations from CSV on the map
+function loadAllStationsFromFile() {
+    // Clear existing full markers
+    allStationMarkers.forEach(m => map.removeLayer(m));
+    allStationMarkers = [];
+
+    fetch('/api/stations-from-file')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Stations file error:', data.error);
+                return;
+            }
+            const stations = data.stations || [];
+            if (!stations.length) return;
+
+            const bounds = L.latLngBounds();
+            stations.forEach(s => {
+                const pos = s.position || {};
+                if (typeof pos.lat !== 'number' || typeof pos.lng !== 'number') return;
+                const marker = L.marker([pos.lat, pos.lng]).addTo(map);
+                marker.bindPopup(`<div class="station-popup"><h3>${s.name || 'CNG Station'}</h3><div class="station-details"><p><i class=\"fas fa-map-marker-alt\"></i> ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</p></div></div>`);
+                allStationMarkers.push(marker);
+                bounds.extend([pos.lat, pos.lng]);
+            });
+
+            if (allStationMarkers.length) {
+                map.fitBounds(bounds, { padding: [40, 40] });
+            }
+        })
+        .catch(err => console.error('Failed to load stations file:', err));
 }
 
 function filterStationsWithinRadius(stations, center) {
@@ -225,39 +320,28 @@ function displayStations(stations) {
     // Create bounds to fit all markers
     const bounds = L.latLngBounds();
 
-    // Sort stations by distance
+    // Sort stations by provided distance if available
     const userPos = userMarker.getLatLng();
     stations.sort((a, b) => {
-        const aPos = a.position || { lat: a.lat, lng: a.lng };
-        const bPos = b.position || { lat: b.lat, lng: b.lng };
-        const distA = calculateDistance(userPos.lat, userPos.lng, aPos.lat, aPos.lng);
-        const distB = calculateDistance(userPos.lat, userPos.lng, bPos.lat, bPos.lng);
-        return distA - distB;
+        const ad = typeof a._dist === 'number' ? a._dist : calculateDistance(userPos.lat, userPos.lng, a.position.lat, a.position.lng);
+        const bd = typeof b._dist === 'number' ? b._dist : calculateDistance(userPos.lat, userPos.lng, b.position.lat, b.position.lng);
+        return ad - bd;
     });
 
     stations.forEach((station, index) => {
         const position = station.position || { lat: station.lat, lng: station.lng };
-        const distance = calculateDistance(
-            userPos.lat,
-            userPos.lng,
-            position.lat,
-            position.lng
-        ).toFixed(1);
+        const distance = (typeof station._dist === 'number')
+            ? station._dist.toFixed(1)
+            : calculateDistance(userPos.lat, userPos.lng, position.lat, position.lng).toFixed(1);
 
         // Add marker to map
-        const isAvailable = station.active_chargers > 0;
-        const marker = L.marker([position.lat, position.lng], {
-            icon: getCustomIcon(station.type, isAvailable)
-        }).addTo(map);
+        const marker = L.marker([position.lat, position.lng]).addTo(map);
 
         // Create popup content with distance
         const popupContent = `
             <div class="station-popup">
                 <h3>${station.name}</h3>
                 <div class="station-details">
-                    <p><i class="fas fa-gas-pump"></i> ${station.active_chargers}/${station.total_chargers} CNG Pumps Available</p>
-                    <p><i class="fas fa-clock"></i> ${station.wait_time.toFixed(2)} mins wait time</p>
-                    <p><i class="fas fa-bolt"></i> ${station.power || '50'} kW</p>
                     <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
                 </div>
                 <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">
@@ -276,9 +360,6 @@ function displayStations(stations) {
         stationCard.innerHTML = `
             <h3>${station.name}</h3>
             <div class="station-details">
-                <p><i class="fas fa-gas-pump"></i> ${station.active_chargers}/${station.total_chargers} CNG Pumps</p>
-                <p><i class="fas fa-clock"></i> ${station.wait_time.toFixed(2)} mins wait</p>
-                <p><i class="fas fa-bolt"></i> ${station.power || '50'} kW</p>
                 <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
             </div>
             <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">

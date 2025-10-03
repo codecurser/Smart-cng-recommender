@@ -79,45 +79,90 @@ function getCurrentLocation() {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
     button.disabled = true;
 
+    const done = () => resetLocationButton(button);
+
     if (!navigator.geolocation) {
         alert("Geolocation is not supported by your browser");
-        resetLocationButton(button);
-        return;
+        return done();
     }
 
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            handleLocationSelect(lat, lng);
-            map.setView([lat, lng], 14);
-            resetLocationButton(button);
-        },
-        function(error) {
-            let errorMessage = "Error getting your location. ";
-            switch(error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage += "Please enable location services.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage += "Location unavailable.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessage += "Request timed out.";
-                    break;
-                default:
-                    errorMessage += "An unknown error occurred.";
+    const optionsHigh = { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 };
+    const optionsLow = { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 };
+
+    const onSuccess = (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        handleLocationSelect(lat, lng);
+        map.setView([lat, lng], 14);
+        done();
+    };
+
+    const tryIpFallback = () => {
+        const withTimeout = (p, ms=4000) => Promise.race([
+            p,
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+        ]);
+        const providers = [
+            () => withTimeout(fetch('https://ipapi.co/json/').then(r => r.json())),
+            () => withTimeout(fetch('https://ipwho.is/').then(r => r.json()).then(d => ({ latitude: d.latitude, longitude: d.longitude }))),
+            () => withTimeout(fetch('https://geolocation-db.com/json/').then(r => r.json()).then(d => ({ latitude: parseFloat(d.latitude), longitude: parseFloat(d.longitude) }))),
+        ];
+        (async () => {
+            for (const p of providers) {
+                try {
+                    const data = await p();
+                    const lat = typeof data.latitude === 'number' ? data.latitude : parseFloat(data.latitude);
+                    const lng = typeof data.longitude === 'number' ? data.longitude : parseFloat(data.longitude);
+                    if (isFinite(lat) && isFinite(lng)) {
+                        handleLocationSelect(lat, lng);
+                        map.setView([lat, lng], 12);
+                        done();
+                        return;
+                    }
+                } catch {}
             }
-            alert(errorMessage);
-            resetLocationButton(button);
+            alert('Unable to determine your location. Click on the map to choose a point.');
+            done();
+        })();
+    };
+
+    const startGeo = () => navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+            if (err && err.code === err.TIMEOUT) {
+                // Retry with lower accuracy
+                navigator.geolocation.getCurrentPosition(onSuccess, () => tryIpFallback(), optionsLow);
+            } else if (err && err.code === err.POSITION_UNAVAILABLE) {
+                // Go straight to IP-based fallback
+                tryIpFallback();
+            } else if (err && err.code === err.PERMISSION_DENIED) {
+                alert('Location permission denied. You can click on the map to select a point.');
+                done();
+            } else {
+                // Unavailable or unknown
+                tryIpFallback();
+            }
         },
-        {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-        }
+        optionsHigh
     );
+
+    // If Permissions API is available, check first to avoid silent failures
+    try {
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+                if (status.state === 'denied') {
+                    alert('Location access is blocked for this site. Enable it in your browser settings, or click on the map to choose a point.');
+                    return tryIpFallback();
+                }
+                // 'granted' or 'prompt' -> attempt geolocation
+                startGeo();
+            }).catch(() => startGeo());
+        } else {
+            startGeo();
+        }
+    } catch (_) {
+        startGeo();
+    }
 }
 
 function resetLocationButton(button) {
@@ -149,24 +194,33 @@ function fetchNearbyStations(lat, lng) {
     const stationList = document.getElementById('station-list');
     stationList.innerHTML = '<div class="loading">Finding CNG stations...</div>';
 
-    fetch(`/api/stations/${lat}/${lng}?radius=${searchRadius}`)
-        .then(response => response.json())
+    // Use stations from file, compute distances client-side
+    fetch('/api/stations-from-file')
+        .then(r => r.json())
         .then(data => {
             if (data.error) {
-                alert(data.error);
-                return;
+                throw new Error(data.error);
             }
-            // Filter stations within radius
-            const stations = filterStationsWithinRadius(data.stations, {lat, lng});
-            if (stations.length === 0) {
+            const all = (data.stations || []).map(s => ({
+                name: s.name || 'CNG Station',
+                position: { lat: s.position.lat, lng: s.position.lng }
+            }));
+            // Filter within radius and sort by distance
+            const within = all
+                .map(s => ({...s, _dist: calculateDistance(lat, lng, s.position.lat, s.position.lng)}))
+                .filter(s => s._dist <= searchRadius)
+                .sort((a, b) => a._dist - b._dist)
+                .slice(0, 3); // nearest 3
+
+            if (within.length === 0) {
                 stationList.innerHTML = '<div class="no-stations">No CNG stations found within ' + searchRadius + 'km radius</div>';
             } else {
-                displayStations(stations);
+                displayStations(within);
             }
         })
-        .catch(error => {
-            console.error('Error fetching stations:', error);
-            alert('Error fetching nearby stations. Please try again.');
+        .catch(err => {
+            console.error('Error fetching stations from file:', err);
+            stationList.innerHTML = '<div class="no-stations">Unable to load stations data.</div>';
         });
 }
 
@@ -212,25 +266,16 @@ function displayStations(stations) {
     
     stations.forEach((station, index) => {
         const position = station.position || { lat: station.lat, lng: station.lng };
-        const distance = userMarker ? 
-            calculateDistance(
-                userMarker.getLatLng().lat,
-                userMarker.getLatLng().lng,
-                position.lat,
-                position.lng
-            ).toFixed(2) : '?';
+        const distance = (typeof station._dist === 'number')
+            ? station._dist.toFixed(2)
+            : (userMarker ? calculateDistance(userMarker.getLatLng().lat, userMarker.getLatLng().lng, position.lat, position.lng).toFixed(2) : '?');
         
-        const marker = L.marker([position.lat, position.lng], {
-            icon: getCustomIcon(station.type || 'default', station.active_chargers > 0)
-        }).addTo(map);
+        const marker = L.marker([position.lat, position.lng]).addTo(map);
         
         const popupContent = `
             <div class="station-popup">
                 <h3>${station.name}</h3>
                 <div class="station-details">
-                    <p><i class="fas fa-gas-pump"></i> ${station.active_chargers}/${station.total_chargers} CNG Pumps</p>
-                    <p><i class="fas fa-clock"></i> ${station.wait_time.toFixed(2)} mins wait</p>
-                    <p><i class="fas fa-bolt"></i> ${station.power || '50'} kW</p>
                     <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
                 </div>
                 <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">
@@ -249,9 +294,6 @@ function displayStations(stations) {
         stationCard.innerHTML = `
             <h3>${station.name}</h3>
             <div class="station-details">
-                <p><i class="fas fa-charging-station"></i> ${station.active_chargers}/${station.total_chargers} Chargers</p>
-                <p><i class="fas fa-clock"></i> ${station.wait_time.toFixed(2)} mins wait</p>
-                <p><i class="fas fa-bolt"></i> ${station.power || '50'} kW</p>
                 <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
             </div>
             <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">

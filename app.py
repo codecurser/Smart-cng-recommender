@@ -294,58 +294,44 @@ def send_static(path):
 
 @app.route('/api/stations/<lat>/<lng>')
 def get_nearby_stations(lat, lng):
+    """Return stations from CSV/XLSX near the provided lat/lng, optional radius in km."""
     lat, lng = float(lat), float(lng)
-    time_info = get_time_info()
-    
-    # Fetch gas stations as potential nodes
-    nodes = fetch_gas_stations(lat, lng)
-    
-    if not nodes:
-        return jsonify({'error': 'No suitable locations found', 'stations': []})
-    
-    # Get optimal locations using the LocationOptimizer
-    candidates = location_optimizer.get_candidate_locations(nodes, time_info)
-    
-    # Prepare station data for wait time prediction
-    station_data = []
-    for i, candidate in enumerate(candidates[:5]):  # Take top 5 candidates
-        station = {
-            'id': i + 1,
-            'name': f"CNG Station {i+1}",
-            'lat': candidate['location']['lat'],
-            'lng': candidate['location']['lng'],
-            'type': candidate['type'],
-            'active_chargers': np.random.randint(3, 7),
-            'total_chargers': np.random.randint(7, 12),
-            'current_queue_length': np.random.randint(0, 3),
-            'hour_of_day': time_info['hour'],
-            'day_of_week': time_info['day_of_week'],
-            'is_weekend': time_info['is_weekend'],
-            'traffic_density': candidate['congestion_score'],
-            'historical_avg_wait_time': 15
-        }
-        station_data.append(station)
-    
-    # Get wait time predictions
-    predictions = wait_time_predictor.predict_wait_time(station_data)
-    
-    # Prepare response
-    stations = []
-    for station, pred in zip(station_data, predictions):
-        stations.append({
-            'id': station['id'],
-            'name': station['name'],
-            'position': {'lat': station['lat'], 'lng': station['lng']},
-            'wait_time': pred['predicted_wait'],
-            'confidence': pred['confidence'],
-            'active_chargers': station['active_chargers'],
-            'total_chargers': station['total_chargers'],
-            'connectors': get_random_connectors(),
-            'power': get_random_power(),
-            'type': station['type']
-        })
-    
-    return jsonify({'stations': stations})
+    try:
+        radius_km = float(request.args.get('radius', 5))
+    except Exception:
+        radius_km = 5.0
+
+    data = _read_stations_file()
+    stations_file = data.get('stations', [])
+    if not stations_file:
+        return jsonify({'error': data.get('error', 'No stations data'), 'stations': []}), 400
+
+    def haversine_km(lat1, lon1, lat2, lon2):
+        R = 6371.0
+        dlat = np.radians(lat2 - lat1)
+        dlon = np.radians(lon2 - lon1)
+        a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
+        c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
+        return float(R * c)
+
+    result = []
+    for s in stations_file:
+        pos = s.get('position') or {}
+        slat = pos.get('lat')
+        slng = pos.get('lng')
+        if slat is None or slng is None:
+            continue
+        d = haversine_km(lat, lng, slat, slng)
+        if d <= radius_km:
+            result.append({
+                'name': s.get('name', 'CNG Station'),
+                'position': {'lat': slat, 'lng': slng},
+                'distance_km': round(d, 3)
+            })
+
+    # Sort by distance
+    result.sort(key=lambda x: x['distance_km'])
+    return jsonify({'stations': result})
 
 def get_random_connectors():
     connector_types = ["Type 2", "CCS", "CHAdeMO"]
