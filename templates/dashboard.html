@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargeWise - CNG Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div class="title-bar">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="logo">
+        </div>
+        <div class="profile-section">
+            <button class="about-btn">
+                <i class="fas fa-info-circle"></i>
+            </button>
+            <div class="profile-menu">
+                <button class="profile-button" onclick="toggleProfileDropdown()">
+                    <i class="fas fa-user"></i>
+                    <span class="username">{{ username }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-content">
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span>{{ username }}</span>
+                        </div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="welcome-section animate__animated animate__fadeIn">
+            <h1>Welcome back, <span class="highlight">{{ username }}</span>!</h1>
+            <p class="subtitle">Your sustainable journey starts here</p>
+        </div>
+
+        <div class="quick-stats animate__animated animate__fadeInUp">
+            <div class="stat-card">
+                <i class="fas fa-gas-pump"></i>
+                <div class="stat-info">
+                    <h3>Available CNG Stations</h3>
+                    <p>150+ Stations</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-route"></i>
+                <div class="stat-info">
+                    <h3>Route Coverage</h3>
+                    <p>Delhi NCR</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-tachometer-alt"></i>
+                <div class="stat-info">
+                    <h3>Fast CNG Filling</h3>
+                    <p>50+ Locations</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-cards">
+            <a href="{{ url_for('stations') }}" class="feature-card animate__animated animate__fadeInUp">
+                <div class="card-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <h2>Find CNG Stations</h2>
+                <p>Locate CNG stations near you with real-time availability</p>
+            </a>
+            
+            <a href="{{ url_for('route_planner') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                <div class="card-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h2>Plan Route</h2>
+                <p>Plan your journey with optimal CNG filling stops</p>
+            </a>
+            
+            <a href="{{ url_for('analytics') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2>Analytics</h2>
+                <p>View CNG filling statistics and usage patterns</p>
+            </a>
+
+            <a href="{{ url_for('cng_switch') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="card-icon">
+                    <i class="fas fa-gas-pump"></i>
+                </div>
+                <h2>CNG Switch</h2>
+                <p>Calculate savings and environmental impact of switching to CNG</p>
+            </a>
+        </div>
+
+        <div class="tips-section animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+            <h2>Quick Tips</h2>
+            <div class="tips-carousel">
+                <div class="tip-card">
+                    <i class="fas fa-lightbulb"></i>
+                    <h3>Did You Know?</h3>
+                    <p>CNG filling is most efficient when your tank is between 20% and 80% full.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="footer animate__animated animate__fadeInUp">
+        <div class="footer-container">
+            <!-- Company Info Section -->
+            <div class="footer-section">
+                <div class="footer-logo" >
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" >
+                </div>
+                <p class="company-description">
+                    ChargeWise is your trusted companion for finding CNG stations. 
+                    Making CNG vehicle refueling accessible and convenient for everyone.
+                </p>
+            </div>
+
+            <!-- Quick Links Section -->
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('stations') }}">Find Stations</a></li>
+                    <li><a href="{{ url_for('route_planner') }}">Route Planner</a></li>
+                    <li><a href="{{ url_for('analytics') }}">Analytics</a></li>
+                    <li><a href="{{ url_for('cng_switch') }}">CNG Switch</a></li>
+                </ul>
+            </div>
+
+            <!-- Services Section -->
+            <div class="footer-section">
+                <h3>Services</h3>
+                <ul>
+                    <li><a href="{{ url_for('stations') }}">Find Stations</a></li>
+                    <li><a href="{{ url_for('route_planner') }}">Route Planning</a></li>
+                </ul>
+            </div>
+
+            <!-- Contact Info Section -->
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <ul class="contact-info">
+                    <li><i class="fas fa-map-marker-alt"></i> Sharda University, Greater Noida</li>
+                    <li><i class="fas fa-phone"></i> +91 9503569583</li>
+                    <li><i class="fas fa-envelope"></i> support@chargewise.com</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <div class="footer-bottom">
+            <div class="footer-bottom-content">
+                <div class="copyright">
+                    © 2024 ChargeWise. All rights reserved.
+                </div>
+                <div class="legal-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- About Modal -->
+    <div class="about-modal" id="aboutModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="modal-logo" style="width: 180px; height: auto;">
+            </div>
+            <p class="project-description">
+                ChargeWise is a web application that provides users with a seamless experience for locating nearby CNG stations. 
+                The app accesses the user's current location and fetches real-time data for finding optimal CNG stations in the vicinity. 
+                Users can interact with the map to view station details and get directions to their chosen CNG station.
+            </p>
+            <h3>Development Team</h3>
+            <div class="team-grid">
+                <div class="team-row">
+                    <a href="https://www.linkedin.com/in/goyalkrish" target="_blank" class="team-card">
+                        <div class="profile-image">KG</div>
+                        <h4>Krish Goyal</h4>
+                        <p class="role">Full Stack Developer</p>
+                        <div class="linkedin-icon">
+                            <i class="fab fa-linkedin"></i>
+                        </div>
+                    </a>
+                    <a href="https://www.linkedin.com/in/adhax" target="_blank" class="team-card">
+                        <div class="profile-image">AP</div>
+                        <h4>Aditya Pandey</h4>
+                        <p class="role">Backend Developer</p>
+                        <div class="linkedin-icon">
+                            <i class="fab fa-linkedin"></i>
+                        </div>
+                    </a>
+                </div>
+                <div class="team-row">
+                    <a href="https://www.linkedin.com/in/aryan-sharma-9a84142bb" target="_blank" class="team-card">
+                        <div class="profile-image">AS</div>
+                        <h4>Aryan Sharma</h4>
+                        <p class="role">Frontend Developer</p>
+                        <div class="linkedin-icon">
+                            <i class="fab fa-linkedin"></i>
+                        </div>
+                    </a>
+                    <a href="https://www.linkedin.com/in/vishal-dubey-8218052a6" target="_blank" class="team-card">
+                        <div class="profile-image">VD</div>
+                        <h4>Vishal Dubey</h4>
+                        <p class="role">UI/UX Developer</p>
+                        <div class="linkedin-icon">
+                            <i class="fab fa-linkedin"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add JavaScript for modal functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const aboutBtn = document.querySelector('.about-btn');
+            const modal = document.getElementById('aboutModal');
+            const closeBtn = document.querySelector('.close-modal');
+
+            aboutBtn.addEventListener('click', () => {
+                modal.style.display = 'block';
+            });
+
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 

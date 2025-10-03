@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargeWise - CNG Station Locator</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+<body>
+    <div class="title-bar">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="logo" >
+        </div>
+        <div class="profile-section">
+            <button class="about-btn">
+                <i class="fas fa-info-circle"></i>
+            </button>
+            <div class="profile-menu">
+                <button class="profile-button" onclick="toggleProfileDropdown()">
+                    <i class="fas fa-user"></i>
+                    <span class="username">{{ username }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-content">
+                        <div class="user-info">
+                            <i class="fas fa-user-circle"></i>
+                            <span>{{ username }}</span>
+                        </div>
+                        <a href="{{ url_for('logout') }}" class="dropdown-item logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-content">
+                    <div class="top-controls">
+                        <button class="toggle-sidebar">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button id="location-button">
+                            <i class="fas fa-location-arrow"></i> Use My Location
+                        </button>   
+                    </div>
+                    <div class="radius-container">
+                        <label for="radius-slider">Search Radius: <span id="radius-value">5</span> km</label>
+                        <input type="range" id="radius-slider" min="1" max="20" value="5" class="slider">
+                    </div>
+                </div>
+            </div>
+            <div id="station-list">
+                <div class="station-list-fallback">
+                    <i class="fas fa-charging-station"></i>
+                    <p>Your list of stations will appear here</p>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Add About Modal -->
+    <div class="about-modal" id="aboutModal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="modal-logo" style="width: 180px; height: auto;">
+            </div>
+            <p class="project-description">
+                ChargeWise is a web application that provides users with a seamless experience for locating nearby EV charging stations. 
+                The app accesses the user's current location and fetches real-time data for finding optimal charging stations in the vicinity. 
+                Users can interact with the map to view station details and get directions to their chosen charging station.
+            </p>
+            <h3>Team Members</h3>
+            <ul class="team-list">
+                <li>Aditya Pandey</li>
+                <li>Krish Goyal</li>
+                <li>Aryan Sharma</li>
+                <li>Vishal Dubey</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
