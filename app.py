@@ -434,6 +434,12 @@ def cng_switch():
         return redirect(url_for('login'))
     return render_template('cng_switch_soon.html', username=session.get('username'))
 
+@app.route('/ev-switcher')
+def ev_switcher():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('cng_switch_soon.html', username=session.get('username'))
+
 @app.route('/api/route-plan', methods=['POST'])
 def plan_route():
     data = request.json
