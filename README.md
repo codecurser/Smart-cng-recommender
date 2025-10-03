@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="static/images/logo.png" alt="ChargeWise Logo" width="400" height="auto">
+  <img src="static/@logo.png" alt="ChargeWise Logo" width="400" height="auto">
 </p>
 
 # ChargeWise - CNG Station Dashboard 🚗⛽

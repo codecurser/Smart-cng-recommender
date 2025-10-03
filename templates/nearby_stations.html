@@ -12,7 +12,7 @@
 <body>
     <div class="title-bar">
         <div class="logo-container">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="logo">
+            <img src="{{ url_for('static', filename='@logo.png') }}" alt="ChargeWise Logo" class="logo">
         </div>
         <nav class="nav-links">
             <a href="/" class="nav-link">Dashboard</a>
@@ -70,7 +70,7 @@
         <div class="modal-content">
             <span class="close-modal">&times;</span>
             <div class="modal-header">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="modal-logo" style="width: 180px; height: auto;">
+                <img src="{{ url_for('static', filename='@logo.png') }}" alt="ChargeWise Logo" class="modal-logo" style="width: 180px; height: auto;">
             </div>
             <p class="project-description">
                 ChargeWise is a web application that provides users with a seamless experience for locating nearby CNG stations. 
