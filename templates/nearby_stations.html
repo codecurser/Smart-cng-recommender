@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargeWise - Find CNG Stations</title>
+    <title>QuickFill - Find CNG Stations</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/find_stations.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -14,7 +15,7 @@
 <body>
     <div class="title-bar">
         <div class="logo-container">
-            <img src="{{ url_for('static', filename='@logo.png') }}" alt="ChargeWise Logo" class="logo">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="QuickFill Logo" class="logo">
         </div>
         <nav class="nav-links">
             <a href="/" class="nav-link">Dashboard</a>
@@ -88,14 +89,13 @@
 
     <!-- JavaScript -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='js/enhanced_nearby_stations.js') }}"></script>
 
     <!-- About Modal -->
     <div class="about-modal" id="aboutModal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
             <div class="modal-header">
-                <img src="{{ url_for('static', filename='@logo.png') }}" alt="ChargeWise Logo" class="modal-logo" style="width: 180px; height: auto;">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="QuickFill Logo" class="modal-logo" style="width: 180px; height: auto;">
             </div>
             <p class="project-description">
                 ChargeWise is a web application that provides users with a seamless experience for locating nearby CNG stations. 

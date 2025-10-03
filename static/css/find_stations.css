@@ -18,6 +18,23 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 15px;
+    position: relative;
+}
+
+/* Add logo inside the loading spinner */
+.loading-spinner::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    background-image: url('../images/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 50%;
 }
 
 .loading-text {
@@ -46,7 +63,7 @@
     cursor: pointer;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* avoid clipping text/content */
     border: 1px solid rgba(2, 62, 138, 0.1);
     will-change: transform, box-shadow;
     transform: translateZ(0);
@@ -63,6 +80,7 @@
     background: linear-gradient(90deg, transparent, rgba(2, 62, 138, 0.1), transparent);
     transition: left 0.6s ease;
     pointer-events: none;
+    z-index: -1; /* ensure the sheen sits behind text */
 }
 
 .station-card:hover::before {
@@ -75,13 +93,13 @@
     border-color: #023E8A;
     z-index: 1;
 }
-.station-card.compact { padding: 8px 10px; border-radius: 10px; contain: layout paint; }
+.station-card.compact { padding: 8px 10px; border-radius: 10px; contain: layout paint; min-height: 64px; }
 .station-card.compact .station-name { font-size: 0.95rem; font-weight: 600; color: #2c3e50; }
 .station-card.compact .station-line-1 {
-    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; line-height: 1.2;
 }
 .station-card.compact .station-line-2 {
-    display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 0.82rem;
+    display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 0.82rem; line-height: 1.2;
 }
 .station-card.compact .meta i { color: #90a4ae; margin-right: 6px; }
 .station-distance-chip { background: #023E8A; color: #fff; border-radius: 9999px; padding: 1px 8px; font-size: 0.72rem; font-weight: 600; }
@@ -93,6 +111,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Ensure text stays above decorative layers */
+.station-card .station-line-1,
+.station-card .station-line-2,
+.station-card .station-details,
+.station-card h3,
+.station-card p,
+.station-card button {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure long names wrap to next line on small widths */
+.station-card .station-name { white-space: normal; }
 
 
 .station-card-header {
@@ -241,6 +273,9 @@
     border-top-left-radius: 12px;
     position: relative;
     overflow: hidden;
+    flex: 0 0 auto; /* prevent collapsing */
+    min-height: 64px; /* keep header visible */
+    z-index: 2; /* stay above content */
 }
 
 .sidebar-header::before {
