@@ -465,58 +465,77 @@ body::before {
 }
 
 .team-card {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 25px 20px;
+    border-radius: 16px;
     text-align: center;
     text-decoration: none;
     color: #333;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .team-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    background: #fff;
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-color: #4CAF50;
 }
 
-.team-card i.fa-user-circle {
-    font-size: 3em;
-    color: #4CAF50;
-    margin-bottom: 10px;
-}
-
-.team-card h4 {
-    margin: 10px 0;
-    font-size: 1.1em;
-}
-
-.linkedin-icon {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: #0077b5;
-    color: white;
-    width: 30px;
-    height: 30px;
+.profile-image {
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-.team-card:hover .linkedin-icon {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.linkedin-icon i {
+    font-weight: bold;
     font-size: 1.2em;
+    margin: 0 auto 15px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    transition: all 0.3s ease;
+}
+
+.team-card:hover .profile-image {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.team-card h4 {
+    margin: 15px 0 8px;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.team-card .role {
+    color: #666;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.team-icon {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.team-card:hover .team-icon {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.team-icon i {
+    color: #4CAF50;
+    font-size: 1.3em;
 }
 
 @media (max-width: 768px) {
