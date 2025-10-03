@@ -13,6 +13,16 @@ class WaitTimePredictor:
         )
         self.scaler = StandardScaler()
         self.is_trained = False
+        self.feature_columns = [
+            'active_chargers',
+            'total_chargers',
+            'current_queue_length',
+            'hour_of_day',
+            'day_of_week',
+            'is_weekend',
+            'traffic_density',
+            'historical_avg_wait_time'
+        ]
         
     def _prepare_features(self, station_data):
         """Convert station data into feature matrix"""
@@ -37,6 +47,54 @@ class WaitTimePredictor:
         X_scaled = self.scaler.fit_transform(X)
         self.model.fit(X_scaled, wait_times)
         self.is_trained = True
+
+    def train_from_csv(self, file_path: str):
+        """Train model from a CSV file with flexible column names."""
+        try:
+            df = pd.read_csv(file_path)
+        except Exception:
+            df = pd.read_excel(file_path)
+
+        # Normalize columns
+        cols = {str(c).strip().lower(): c for c in df.columns}
+
+        def get_col(*candidates, default=None):
+            for cand in candidates:
+                if cand in cols:
+                    return cols[cand]
+            return default
+
+        # Map required feature columns with defaults if missing
+        mapping = {
+            'active_chargers': get_col('active_chargers', 'active_pumps', 'available_pumps', default=None),
+            'total_chargers': get_col('total_chargers', 'total_pumps', 'pumps', default=None),
+            'current_queue_length': get_col('current_queue_length', 'queue', 'queue_length', default=None),
+            'hour_of_day': get_col('hour_of_day', 'hour', default=None),
+            'day_of_week': get_col('day_of_week', 'dow', default=None),
+            'is_weekend': get_col('is_weekend', default=None),
+            'traffic_density': get_col('traffic_density', 'traffic', default=None),
+            'historical_avg_wait_time': get_col('historical_avg_wait_time', 'avg_wait', 'avg_wait_time', default=None),
+        }
+
+        target_col = get_col('wait_time', 'waiting_time', 'target')
+        if target_col is None:
+            raise ValueError('Target wait time column not found in training CSV')
+
+        # Build training dict list
+        records = []
+        waits = []
+        for _, row in df.iterrows():
+            record = {}
+            for f, src in mapping.items():
+                val = row[src] if src is not None and src in df.columns else None
+                if pd.isna(val):
+                    val = None
+                record[f] = float(val) if val is not None else 0.0
+            records.append(record)
+            waits.append(float(row[target_col]))
+
+        self.train(records, waits)
+        return True
 
     def predict_wait_time(self, station_data):
         """Predict waiting times for stations"""

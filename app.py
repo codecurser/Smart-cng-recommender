@@ -18,6 +18,18 @@ app = Flask(__name__, static_url_path='/static')
 # Initialize models
 station_calculator = ChargingStationCalculator()
 wait_time_predictor = WaitTimePredictor()
+try:
+    wt_path_candidates = [
+        os.path.join(os.path.dirname(__file__), 'CNG_pumps_with_Erlang-C_waiting_times.csv'),
+        os.path.join(os.path.dirname(__file__), 'waiting_times.csv')
+    ]
+    for p in wt_path_candidates:
+        if os.path.exists(p):
+            wait_time_predictor.train_from_csv(p)
+            print(f"Wait time model trained from {os.path.basename(p)}")
+            break
+except Exception as e:
+    print(f"Wait time model training failed: {e}")
 location_optimizer = LocationOptimizer()
 
 # Define water bodies and restricted areas in NCR
@@ -324,14 +336,46 @@ def get_nearby_stations(lat, lng):
         d = haversine_km(lat, lng, slat, slng)
         if d <= radius_km:
             result.append({
+                'id': f"{slat:.6f},{slng:.6f}",
                 'name': s.get('name', 'CNG Station'),
                 'position': {'lat': slat, 'lng': slng},
-                'distance_km': round(d, 3)
+                'distance_km': round(d, 3),
+                'active_chargers': 1,
+                'total_chargers': 2,
             })
 
-    # Sort by distance
-    result.sort(key=lambda x: x['distance_km'])
+    # Predict wait times
+    timeinfo = get_time_info()
+    feature_recs = []
+    for st in result:
+        feature_recs.append({
+            'id': st['id'],
+            'active_chargers': st.get('active_chargers', 1),
+            'total_chargers': st.get('total_chargers', 2),
+            'current_queue_length': max(0, int(round(np.random.poisson(1)))),
+            'hour_of_day': timeinfo['hour'],
+            'day_of_week': timeinfo['day_of_week'],
+            'is_weekend': 1 if timeinfo['is_weekend'] else 0,
+            'traffic_density': 0.5,
+            'historical_avg_wait_time': 10.0
+        })
+    preds = wait_time_predictor.predict_wait_time(feature_recs)
+    pred_map = {p['station_id']: p for p in preds}
+
+    for st in result:
+        pm = pred_map.get(st['id'])
+        if pm:
+            st['predicted_wait'] = round(float(pm['predicted_wait']), 2)
+            st['prediction_confidence'] = round(float(pm['confidence']), 2)
+
+    # Sort by predicted wait then distance
+    result.sort(key=lambda x: (x.get('predicted_wait', 9999), x['distance_km']))
     return jsonify({'stations': result})
+
+@app.route('/api/stations-with-wait/<lat>/<lng>')
+def get_nearby_stations_with_wait(lat, lng):
+    # Proxy to existing endpoint logic
+    return get_nearby_stations(lat, lng)
 
 def get_random_connectors():
     connector_types = ["Type 2", "CCS", "CHAdeMO"]

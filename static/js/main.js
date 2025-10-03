@@ -7,6 +7,7 @@ let accuracyCircle = null;
 let isMapInitialized = false;
 let searchRadius = 5; // Default radius in km
 let radiusCircle = null;
+const AVG_SPEED_KMPH = 30; // Average driving speed for ETA in km/h
 
 // Replace with your Google Maps API key
 const GOOGLE_MAPS_API_KEY = 'YOUR_API_KEY';
@@ -203,8 +204,8 @@ function fetchNearbyStations(lat, lng) {
     const stationList = document.getElementById('station-list');
     stationList.innerHTML = '<div class="loading">Finding CNG stations...</div>';
 
-    // Prefer server-side filtered endpoint
-    fetch(`/api/stations/${lat}/${lng}?radius=${searchRadius}`)
+    // Prefer server-side filtered endpoint with wait-time predictions
+    fetch(`/api/stations-with-wait/${lat}/${lng}?radius=${searchRadius}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -213,7 +214,9 @@ function fetchNearbyStations(lat, lng) {
             const stations = (data.stations || []).map(s => ({
                 name: s.name,
                 position: s.position,
-                _dist: s.distance_km
+                _dist: s.distance_km,
+                predicted_wait: typeof s.predicted_wait === 'number' ? s.predicted_wait : null,
+                prediction_confidence: s.prediction_confidence
             }));
             if (stations.length === 0) {
                 stationList.innerHTML = '<div class="no-stations">No CNG stations found within ' + searchRadius + 'km radius</div>';
@@ -330,9 +333,13 @@ function displayStations(stations) {
 
     stations.forEach((station, index) => {
         const position = station.position || { lat: station.lat, lng: station.lng };
-        const distance = (typeof station._dist === 'number')
-            ? station._dist.toFixed(1)
-            : calculateDistance(userPos.lat, userPos.lng, position.lat, position.lng).toFixed(1);
+        const distanceKm = (typeof station._dist === 'number')
+            ? station._dist
+            : calculateDistance(userPos.lat, userPos.lng, position.lat, position.lng);
+        const distance = distanceKm.toFixed(1);
+        const travelTimeMin = Math.round((distanceKm / AVG_SPEED_KMPH) * 60);
+        const waitMin = station.predicted_wait != null ? Math.round(station.predicted_wait) : null;
+        const totalTimeMin = waitMin != null ? (travelTimeMin + waitMin) : travelTimeMin;
 
         // Add marker to map
         const marker = L.marker([position.lat, position.lng]).addTo(map);
@@ -343,6 +350,9 @@ function displayStations(stations) {
                 <h3>${station.name}</h3>
                 <div class="station-details">
                     <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
+                    <p><i class="fas fa-road"></i> ~${travelTimeMin} mins travel</p>
+                    ${waitMin != null ? `<p><i class="fas fa-clock"></i> ~${waitMin} mins predicted wait</p>` : ''}
+                    <p><i class="fas fa-stopwatch"></i> ~${totalTimeMin} mins total</p>
                 </div>
                 <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">
                     <i class="fas fa-directions"></i> Get Directions
@@ -361,6 +371,9 @@ function displayStations(stations) {
             <h3>${station.name}</h3>
             <div class="station-details">
                 <p><i class="fas fa-map-marker-alt"></i> ${distance} km away</p>
+                <p><i class="fas fa-road"></i> ~${travelTimeMin} mins travel</p>
+                ${waitMin != null ? `<p><i class=\"fas fa-clock\"></i> ~${waitMin} mins predicted wait</p>` : ''}
+                <p><i class="fas fa-stopwatch"></i> ~${totalTimeMin} mins total</p>
             </div>
             <button onclick="getDirections(${position.lat}, ${position.lng})" class="direction-btn">
                 <i class="fas fa-directions"></i> Get Directions
