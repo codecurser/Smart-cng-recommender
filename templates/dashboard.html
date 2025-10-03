@@ -133,110 +133,54 @@
             </div>
         </div>
 
-        <!-- Main Features Grid -->
+        <!-- Main Features Grid (Unified) -->
         <div class="features-grid animate__animated animate__fadeInUp">
-            <div class="feature-category">
-                <h2 class="category-title">
-                    <i class="fas fa-map-marked-alt"></i>
-                    Navigation & Location
-                </h2>
-                <div class="feature-items">
-                    <a href="{{ url_for('stations') }}" class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h3>Find CNG Stations</h3>
-                            <p>Locate nearby CNG stations with real-time availability and wait times</p>
-                            <span class="feature-badge">Popular</span>
-                        </div>
-                    </a>
-                    
-                    <a href="{{ url_for('route_planner') }}" class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-route"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h3>Smart Route Planning</h3>
-                            <p>Plan optimal routes with CNG filling stops and time estimates</p>
-                            <span class="feature-badge">New</span>
-                        </div>
-                    </a>
+            <a href="{{ url_for('stations') }}" class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marker-alt"></i>
                 </div>
-            </div>
+                <div class="feature-content">
+                    <h3>Find CNG Stations</h3>
+                    <p>Locate nearby CNG stations with real-time availability and wait times</p>
+                    <span class="feature-badge">Popular</span>
+                </div>
+            </a>
 
-            <div class="feature-category">
-                <h2 class="category-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Analytics & Insights
-                </h2>
-                <div class="feature-items">
-                    <a href="{{ url_for('analytics') }}" class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h3>Usage Analytics</h3>
-                            <p>Track your CNG consumption patterns and cost savings over time</p>
-                            <span class="feature-badge">Coming Soon</span>
-                        </div>
-                    </a>
-                    
-                    <a href="{{ url_for('ev_switcher') }}" class="feature-item">
-                        <div class="feature-icon">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h3>EV Switcher</h3>
-                            <p>Estimate savings and impact when switching to an EV</p>
-                            <span class="feature-badge">Tool</span>
-                        </div>
-                    </a>
+            <a href="{{ url_for('route_planner') }}" class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
                 </div>
-            </div>
+                <div class="feature-content">
+                    <h3>Smart Route Planning</h3>
+                    <p>Plan optimal routes with filling stops and time estimates</p>
+                    <span class="feature-badge">New</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('ev_switcher') }}" class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="feature-content">
+                    <h3>EV Switcher</h3>
+                    <p>Estimate savings and impact when switching to an EV</p>
+                    <span class="feature-badge">Tool</span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('analytics') }}" class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="feature-content">
+                    <h3>Usage Analytics</h3>
+                    <p>Track consumption patterns and cost savings over time</p>
+                    <span class="feature-badge">Coming Soon</span>
+                </div>
+            </a>
         </div>
 
-        <!-- Quick Actions Panel -->
-        <div class="quick-actions animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
-            <h2 class="section-title">Quick Actions</h2>
-            <div class="action-grid">
-                <div class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-location-arrow"></i>
-                    </div>
-                    <h3>Use My Location</h3>
-                    <p>Find the nearest CNG station to your current location</p>
-                    <button class="action-btn" onclick="getCurrentLocation()">
-                        <i class="fas fa-crosshairs"></i>
-                        Locate Me
-                    </button>
-                </div>
-                
-                <div class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <h3>Check Wait Times</h3>
-                    <p>View real-time wait times at popular CNG stations</p>
-                    <button class="action-btn" onclick="checkWaitTimes()">
-                        <i class="fas fa-stopwatch"></i>
-                        Check Now
-                    </button>
-                </div>
-                
-                <div class="action-card">
-                    <div class="action-icon">
-                        <i class="fas fa-bookmark"></i>
-                    </div>
-                    <h3>Saved Stations</h3>
-                    <p>Access your favorite CNG stations quickly</p>
-                    <button class="action-btn" onclick="viewSavedStations()">
-                        <i class="fas fa-heart"></i>
-                        View Saved
-                    </button>
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Tips & Insights Section -->
         <div class="insights-section animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
