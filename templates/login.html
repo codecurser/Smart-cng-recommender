@@ -10,13 +10,6 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </head>
 <body>
-    <div class="login-animated-bg">
-        <div class="bg-gradient"></div>
-        <div class="bg-blur-circle c1"></div>
-        <div class="bg-blur-circle c2"></div>
-        <div class="bg-grid"></div>
-    </div>
-
     <div class="login-container">
         <div class="login-card animate-in">
             <div class="login-card-header">
@@ -66,6 +59,53 @@
                 <a class="link" href="#" onclick="event.preventDefault();">Create an account</a>
             </div>
         </div>
+        
+        <!-- Project Glimpse Panel -->
+        <aside class="preview-panel">
+            <div class="preview-header">
+                <i class="fas fa-charging-station"></i>
+                <div>
+                    <h2>Smart CNG Recommender</h2>
+                    <p>Find nearby CNG stations with real-time insights.</p>
+                </div>
+            </div>
+            <div class="preview-grid">
+                <div class="preview-card">
+                    <div class="mini-map">
+                        <span class="pin" style="--x:24%;--y:32%"></span>
+                        <span class="pin" style="--x:66%;--y:58%"></span>
+                        <span class="pin" style="--x:42%;--y:74%"></span>
+                    </div>
+                    <div class="card-meta">
+                        <strong>Nearby Stations</strong>
+                        <span>Live distance & wait times</span>
+                    </div>
+                </div>
+                <div class="preview-stats">
+                    <div class="stat">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>150+</strong>
+                            <span>Stations</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-route"></i>
+                        <div>
+                            <strong>Smart</strong>
+                            <span>Route planning</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>Real-time</strong>
+                            <span>Wait estimates</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script>
