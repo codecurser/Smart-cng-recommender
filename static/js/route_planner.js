@@ -199,6 +199,41 @@ const cngModels = {
         range: 330,
         fillingSpeed: 11,
         consumption: 0.18
+    },
+    maruti_ertiga_cng: {
+        name: "Maruti Ertiga CNG",
+        tankCapacity: 70,
+        range: 320,
+        fillingSpeed: 11,
+        consumption: 0.22
+    },
+    maruti_dzire_cng: {
+        name: "Maruti Dzire S-CNG",
+        tankCapacity: 60,
+        range: 340,
+        fillingSpeed: 10,
+        consumption: 0.18
+    },
+    hyundai_nios_cng: {
+        name: "Hyundai Grand i10 Nios CNG",
+        tankCapacity: 60,
+        range: 330,
+        fillingSpeed: 10,
+        consumption: 0.18
+    },
+    tata_tigor_cng: {
+        name: "Tata Tigor CNG",
+        tankCapacity: 70,
+        range: 350,
+        fillingSpeed: 11,
+        consumption: 0.20
+    },
+    toyota_glanza_cng: {
+        name: "Toyota Glanza CNG",
+        tankCapacity: 60,
+        range: 350,
+        fillingSpeed: 10,
+        consumption: 0.17
     }
 };
 
