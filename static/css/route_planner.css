@@ -85,6 +85,27 @@ body::before {
     cursor: crosshair;
 }
 
+.planner-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.stat-card i { color: #023E8A; font-size: 18px; }
+.stat-card .label { color: #6c757d; font-size: 12px; }
+.stat-card .value { color: #212529; font-weight: 600; font-size: 16px; }
+
 #filling-stops {
     background: white;
     padding: 20px;

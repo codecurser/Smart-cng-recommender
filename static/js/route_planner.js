@@ -279,20 +279,13 @@ function displayRoute(route, stops) {
     const startPoint = route.coordinates[0];
     const endPoint = route.coordinates[route.coordinates.length - 1];
     
-    // Add route summary if available
-    const routeSummary = document.createElement('div');
-    routeSummary.className = 'route-summary';
-    routeSummary.innerHTML = `
-        <div class="summary-item">
-            <i class="fas fa-road"></i>
-            <span>Distance: ${route.distance.toFixed(1)} km</span>
-        </div>
-        <div class="summary-item">
-            <i class="fas fa-clock"></i>
-            <span>Duration: ${route.duration} mins</span>
-        </div>
-    `;
-    document.querySelector('.route-results').prepend(routeSummary);
+    // Update stat cards (Distance, Duration, Stops)
+    const distEl = document.getElementById('summaryDistance');
+    const durEl = document.getElementById('summaryDuration');
+    const stopsEl = document.getElementById('summaryStops');
+    if (distEl) distEl.textContent = `${route.distance.toFixed(1)} km`;
+    if (durEl) durEl.textContent = `${route.duration} mins`;
+    if (stopsEl) stopsEl.textContent = `${stops.length}`;
     
     // Start marker
     L.marker(startPoint, {
@@ -414,16 +407,32 @@ document.getElementById('route-form').addEventListener('submit', async (e) => {
     routeResults.prepend(loadingDiv);
     
     try {
-        // Parse coordinates
-        const [startLat, startLng] = startLocation.split(',').map(coord => parseFloat(coord.trim()));
-        const [endLat, endLng] = endLocation.split(',').map(coord => parseFloat(coord.trim()));
-        
-        if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
-            throw new Error('Invalid coordinates format');
-        }
+        // Resolve inputs: accept either "lat,lng" or place names via Nominatim
+        const resolveInput = async (input) => {
+            // Try coords first
+            const parts = input.split(',');
+            if (parts.length === 2) {
+                const lat = parseFloat(parts[0].trim());
+                const lng = parseFloat(parts[1].trim());
+                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+            }
+            // Fallback to geocoding (Nominatim)
+            const q = encodeURIComponent(input);
+            const resp = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`);
+            const data = await resp.json();
+            if (Array.isArray(data) && data.length) {
+                const lat = parseFloat(data[0].lat);
+                const lng = parseFloat(data[0].lon);
+                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+            }
+            throw new Error(`Could not resolve location: ${input}`);
+        };
+
+        const startResolved = await resolveInput(startLocation);
+        const endResolved = await resolveInput(endLocation);
         
         // Calculate route first
-        const routeData = await calculateRoute([startLat, startLng], [endLat, endLng]);
+        const routeData = await calculateRoute([startResolved.lat, startResolved.lng], [endResolved.lat, endResolved.lng]);
         
         // Clean up CNG model data before sending
         const selectedCngModel = cngModels[cngModel];
