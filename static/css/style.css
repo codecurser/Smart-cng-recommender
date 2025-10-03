@@ -71,7 +71,7 @@ header {
 
 button {
     padding: 10px 20px;
-    background-color: #4CAF50;
+    background-color: #023E8A;
     color: white;
     border: none;
     border-radius: 4px;
@@ -82,7 +82,7 @@ button {
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #023E8A;
 }
 
 button i {
@@ -162,7 +162,7 @@ button i {
 }
 
 .station-details i {
-    color: #4CAF50;
+    color: #023E8A;
     width: 20px;
 }
 
@@ -283,7 +283,7 @@ button i {
     appearance: none;
     width: 16px;
     height: 16px;
-    background: #4CAF50;
+    background: #023E8A;
     border-radius: 50%;
     cursor: pointer;
 }
@@ -291,7 +291,7 @@ button i {
 .slider::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: #4CAF50;
+    background: #023E8A;
     border-radius: 50%;
     cursor: pointer;
     border: none;
@@ -322,7 +322,7 @@ button i {
 
 .station-list-fallback i {
     font-size: 48px;
-    color: #4CAF50;
+    color: #023E8A;
     margin-bottom: 15px;
     opacity: 0.5;
 }
@@ -382,7 +382,7 @@ button i {
 }
 
 .station-type.market { background: #e3f2fd; color: #1976d2; }
-.station-type.office { background: #e8f5e9; color: #388e3c; }
+.station-type.office { background: #E0F7FF; color: #023E8A; }
 .station-type.hospital { background: #ffebee; color: #d32f2f; }
 
 .station-card-body {
@@ -504,7 +504,7 @@ button i {
     display: flex !important;
     justify-content: center;
     align-items: center;
-    background-color: #4CAF50;
+    background-color: #023E8A;
     color: white;
     border: none;
     border-radius: 4px;
@@ -514,7 +514,7 @@ button i {
 }
 
 .toggle-sidebar:hover {
-    background-color: #45a049;
+    background-color: #023E8A;
 }
 
 .toggle-sidebar i {
@@ -531,7 +531,7 @@ button i {
     width: 30px;
     height: 30px;
     border-radius: 50% 50% 50% 0;
-    background: #4CAF50;
+    background: #023E8A;
     position: absolute;
     transform: rotate(-45deg);
     left: 50%;
@@ -554,7 +554,7 @@ button i {
 
 .marker-pin i {
     transform: rotate(45deg);
-    color: #4CAF50;
+    color: #023E8A;
     position: relative;
     z-index: 1;
     font-size: 16px;
@@ -576,7 +576,7 @@ button i {
 }
 
 .about-btn:hover {
-    color: #4CAF50;
+    color: #023E8A;
 }
 
 /* Modal Styling */
@@ -672,18 +672,18 @@ button i {
     box-shadow: 3px 3px 6px rgba(0,0,0,0.1);
     transition: all 0.3s ease;
     text-align: center;
-    border-left: 4px solid #4CAF50;
+    border-left: 4px solid #023E8A;
 }
 
 .team-list li:hover {
     transform: translateY(-3px);
     box-shadow: 4px 4px 8px rgba(0,0,0,0.15);
     background: linear-gradient(145deg, #ffffff, #f8f9fa);
-    border-left: 4px solid #45a049;
+    border-left: 4px solid #023E8A;
 }
 
 .modal-content h3 {
-    color: #4CAF50;
+    color: #023E8A;
     margin-top: 25px;
     margin-bottom: 15px;
     font-size: 20px;
@@ -696,7 +696,7 @@ button i {
     display: block;
     width: 50px;
     height: 3px;
-    background: #4CAF50;
+    background: #023E8A;
     margin: 10px auto;
     border-radius: 2px;
 }

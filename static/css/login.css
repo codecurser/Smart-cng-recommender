@@ -53,12 +53,12 @@
 }
 
 .input-group input:focus {
-    border-color: #4CAF50;
+    border-color: #023E8A;
     outline: none;
 }
 
 .login-btn {
-    background: #4CAF50;
+    background: #023E8A;
     color: white;
     padding: 12px;
     border: none;
@@ -73,7 +73,7 @@
 }
 
 .login-btn:hover {
-    background: #45a049;
+    background: #023E8A;
 }
 
 .error-message {

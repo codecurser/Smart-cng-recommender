@@ -38,7 +38,7 @@ body::before {
 
 .analytics-icon {
     font-size: 4em;
-    color: #4CAF50;
+    color: #023E8A;
     margin-bottom: 20px;
     animation: float 3s ease-in-out infinite;
 }
@@ -58,7 +58,7 @@ body::before {
 
 .coming-soon span {
     font-size: 2em;
-    color: #4CAF50;
+    color: #023E8A;
     font-weight: bold;
     animation: bounce 2s ease infinite;
     display: inline-block;
@@ -94,7 +94,7 @@ body::before {
 
 .feature i {
     font-size: 2em;
-    color: #4CAF50;
+    color: #023E8A;
     margin-bottom: 15px;
 }
 
@@ -108,7 +108,7 @@ body::before {
     align-items: center;
     gap: 10px;
     padding: 12px 24px;
-    background: #4CAF50;
+    background: #023E8A;
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -116,7 +116,7 @@ body::before {
 }
 
 .back-button:hover {
-    background: #45a049;
+    background: #023E8A;
     transform: translateY(-2px);
 }
 

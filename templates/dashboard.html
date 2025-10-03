@@ -10,6 +10,65 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 </head>
 <body>
+    <!-- Animated Background -->
+    <div class="animated-background">
+        <div class="floating-elements">
+            <div class="floating-shape shape-1">
+                <div class="geometric-pump"></div>
+            </div>
+            <div class="floating-shape shape-2">
+                <div class="geometric-pump"></div>
+            </div>
+            <div class="floating-shape shape-3">
+                <div class="geometric-pump"></div>
+            </div>
+            <div class="floating-shape shape-4">
+                <div class="geometric-pump"></div>
+            </div>
+            <div class="floating-shape shape-5">
+                <div class="geometric-pump"></div>
+            </div>
+            <div class="floating-shape shape-6">
+                <div class="geometric-pump"></div>
+            </div>
+        </div>
+        <div class="particle-container">
+            <div class="particle particle-1"></div>
+            <div class="particle particle-2"></div>
+            <div class="particle particle-3"></div>
+            <div class="particle particle-4"></div>
+            <div class="particle particle-5"></div>
+            <div class="particle particle-6"></div>
+            <div class="particle particle-7"></div>
+            <div class="particle particle-8"></div>
+        </div>
+        <div class="gradient-overlay"></div>
+        <div class="pattern-overlay">
+            <div class="pattern-grid">
+                <div class="grid-line horizontal line-1"></div>
+                <div class="grid-line horizontal line-2"></div>
+                <div class="grid-line horizontal line-3"></div>
+                <div class="grid-line vertical line-4"></div>
+                <div class="grid-line vertical line-5"></div>
+                <div class="grid-line vertical line-6"></div>
+            </div>
+            <div class="floating-dots">
+                <div class="dot dot-1"></div>
+                <div class="dot dot-2"></div>
+                <div class="dot dot-3"></div>
+                <div class="dot dot-4"></div>
+                <div class="dot dot-5"></div>
+                <div class="dot dot-6"></div>
+                <div class="dot dot-7"></div>
+                <div class="dot dot-8"></div>
+            </div>
+            <div class="dynamic-waves">
+                <div class="wave wave-1"></div>
+                <div class="wave wave-2"></div>
+                <div class="wave wave-3"></div>
+            </div>
+        </div>
+    </div>
     <div class="title-bar">
         <div class="logo-container">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ChargeWise Logo" class="logo">
@@ -41,76 +100,169 @@
     </div>
 
     <div class="dashboard-container">
-        <div class="welcome-section animate__animated animate__fadeIn">
-            <h1>Welcome back, <span class="highlight">{{ username }}</span>!</h1>
-            <p class="subtitle">Your sustainable journey starts here</p>
-        </div>
-
-        <div class="quick-stats animate__animated animate__fadeInUp">
-            <div class="stat-card">
-                <i class="fas fa-gas-pump"></i>
-                <div class="stat-info">
-                    <h3>Available CNG Stations</h3>
-                    <p>150+ Stations</p>
+        <!-- Hero Section -->
+        <div class="hero-section animate__animated animate__fadeIn">
+            <div class="hero-content">
+                <h1 class="hero-title">Welcome back, <span class="highlight">{{ username }}</span>!</h1>
+                <p class="hero-subtitle">Your sustainable journey starts here with smart CNG solutions</p>
+                <div class="hero-actions">
+                    <a href="{{ url_for('stations') }}" class="hero-btn primary">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Find Stations
+                    </a>
+                    <a href="{{ url_for('route_planner') }}" class="hero-btn secondary">
+                        <i class="fas fa-route"></i>
+                        Plan Route
+                    </a>
                 </div>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-route"></i>
-                <div class="stat-info">
-                    <h3>Route Coverage</h3>
-                    <p>Delhi NCR</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">CNG Stations</div>
                 </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-tachometer-alt"></i>
-                <div class="stat-info">
-                    <h3>Fast CNG Filling</h3>
-                    <p>50+ Locations</p>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Fast Fill Locations</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Availability</div>
                 </div>
             </div>
         </div>
 
-        <div class="feature-cards">
-            <a href="{{ url_for('stations') }}" class="feature-card animate__animated animate__fadeInUp">
-                <div class="card-icon">
-                    <i class="fas fa-map-marker-alt"></i>
+        <!-- Main Features Grid -->
+        <div class="features-grid animate__animated animate__fadeInUp">
+            <div class="feature-category">
+                <h2 class="category-title">
+                    <i class="fas fa-map-marked-alt"></i>
+                    Navigation & Location
+                </h2>
+                <div class="feature-items">
+                    <a href="{{ url_for('stations') }}" class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Find CNG Stations</h3>
+                            <p>Locate nearby CNG stations with real-time availability and wait times</p>
+                            <span class="feature-badge">Popular</span>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('route_planner') }}" class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-route"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Smart Route Planning</h3>
+                            <p>Plan optimal routes with CNG filling stops and time estimates</p>
+                            <span class="feature-badge">New</span>
+                        </div>
+                    </a>
                 </div>
-                <h2>Find CNG Stations</h2>
-                <p>Locate CNG stations near you with real-time availability</p>
-            </a>
-            
-            <a href="{{ url_for('route_planner') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
-                <div class="card-icon">
-                    <i class="fas fa-route"></i>
-                </div>
-                <h2>Plan Route</h2>
-                <p>Plan your journey with optimal CNG filling stops</p>
-            </a>
-            
-            <a href="{{ url_for('analytics') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
-                <div class="card-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h2>Analytics</h2>
-                <p>View CNG filling statistics and usage patterns</p>
-            </a>
+            </div>
 
-            <a href="{{ url_for('cng_switch') }}" class="feature-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
-                <div class="card-icon">
-                    <i class="fas fa-gas-pump"></i>
+            <div class="feature-category">
+                <h2 class="category-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Analytics & Insights
+                </h2>
+                <div class="feature-items">
+                    <a href="{{ url_for('analytics') }}" class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Usage Analytics</h3>
+                            <p>Track your CNG consumption patterns and cost savings over time</p>
+                            <span class="feature-badge">Coming Soon</span>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('cng_switch') }}" class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-gas-pump"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>CNG Switch Calculator</h3>
+                            <p>Calculate potential savings and environmental impact of switching to CNG</p>
+                            <span class="feature-badge">Tool</span>
+                        </div>
+                    </a>
                 </div>
-                <h2>CNG Switch</h2>
-                <p>Calculate savings and environmental impact of switching to CNG</p>
-            </a>
+            </div>
         </div>
 
-        <div class="tips-section animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
-            <h2>Quick Tips</h2>
-            <div class="tips-carousel">
-                <div class="tip-card">
-                    <i class="fas fa-lightbulb"></i>
-                    <h3>Did You Know?</h3>
-                    <p>CNG filling is most efficient when your tank is between 20% and 80% full.</p>
+        <!-- Quick Actions Panel -->
+        <div class="quick-actions animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="action-grid">
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-location-arrow"></i>
+                    </div>
+                    <h3>Use My Location</h3>
+                    <p>Find the nearest CNG station to your current location</p>
+                    <button class="action-btn" onclick="getCurrentLocation()">
+                        <i class="fas fa-crosshairs"></i>
+                        Locate Me
+                    </button>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Check Wait Times</h3>
+                    <p>View real-time wait times at popular CNG stations</p>
+                    <button class="action-btn" onclick="checkWaitTimes()">
+                        <i class="fas fa-stopwatch"></i>
+                        Check Now
+                    </button>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-bookmark"></i>
+                    </div>
+                    <h3>Saved Stations</h3>
+                    <p>Access your favorite CNG stations quickly</p>
+                    <button class="action-btn" onclick="viewSavedStations()">
+                        <i class="fas fa-heart"></i>
+                        View Saved
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tips & Insights Section -->
+        <div class="insights-section animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+            <h2 class="section-title">Tips & Insights</h2>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>Optimal Filling Time</h3>
+                    <p>CNG filling is most efficient when your tank is between 20% and 80% full. This ensures faster filling and better fuel economy.</p>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h3>Environmental Impact</h3>
+                    <p>CNG produces 25% fewer greenhouse gas emissions compared to gasoline, making it a cleaner fuel choice for the environment.</p>
+                </div>
+                
+                <div class="insight-card">
+                    <div class="insight-icon">
+                        <i class="fas fa-rupee-sign"></i>
+                    </div>
+                    <h3>Cost Savings</h3>
+                    <p>On average, CNG costs 40-50% less than gasoline, providing significant savings on your fuel expenses over time.</p>
                 </div>
             </div>
         </div>
@@ -255,5 +407,82 @@
     </script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- New Interactive Functions -->
+    <script>
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        window.location.href = `/api/stations/${lat}/${lng}`;
+                    },
+                    function(error) {
+                        alert('Unable to get your location. Please enable location services.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        function checkWaitTimes() {
+            // Simulate checking wait times
+            alert('Checking real-time wait times at nearby stations...');
+            // In a real implementation, this would fetch and display wait times
+        }
+
+        function viewSavedStations() {
+            // Simulate viewing saved stations
+            alert('Loading your saved CNG stations...');
+            // In a real implementation, this would show saved stations
+        }
+
+        // Add smooth scrolling for better UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click animations to action buttons
+            const actionBtns = document.querySelectorAll('.action-btn');
+            actionBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    // Create ripple effect
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+                    ripple.classList.add('ripple');
+                    
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+        });
+    </script>
+    
+    <style>
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
 </body>
 </html> 
