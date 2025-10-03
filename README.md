@@ -116,9 +116,10 @@ We welcome contributions! Please follow these steps:
 
 ## 👥 Team
 
-- **Aditya Pandey** - Developer - [LinkedIn](https://www.linkedin.com/in/adhax)
-- **Krish Pankaj Goyal** - Developer - [LinkedIn](https://www.linkedin.com/in/krish-goyal)
-- **Aryan Sharma** - UI/UX Designer - [LinkedIn](https://www.linkedin.com/in/aryan-sharma-9a84142bb)
+- **Aryan Sharma** - Developer - [LinkedIn](https://www.linkedin.com/in/adhax)
+- **Abhishek Gaur** - Developer - [LinkedIn](https://www.linkedin.com/in/krish-goyal)
+- **Anand Mishra** - UI/UX Designer - [LinkedIn](https://www.linkedin.com/in/aryan-sharma-9a84142bb)
+- **Aparna Pandey** - UI/UX Designer - [LinkedIn](https://www.linkedin.com/in/aryan-sharma-9a84142bb)
 - **Vishal Dubey** - Research Analyst - [LinkedIn](https://www.linkedin.com/in/vishal-dubey-8218052a6)
 
 ## 📄 License
