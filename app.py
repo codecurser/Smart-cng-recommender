@@ -30,7 +30,10 @@ try:
             break
 except Exception as e:
     print(f"Wait time model training failed: {e}")
-location_optimizer = LocationOptimizer()
+
+# Initialize location optimizer with data
+data_file_path = os.path.join(os.path.dirname(__file__), 'CNG_pumps_with_Erlang-C_waiting_times_250.csv')
+location_optimizer_instance = LocationOptimizer(data_file_path)
 
 # Define water bodies and restricted areas in NCR
 RESTRICTED_AREAS = [
@@ -388,19 +391,190 @@ def get_random_power():
 
 @app.route('/api/optimize-locations/<lat>/<lng>')
 def get_optimal_locations(lat, lng):
-    # Dummy node data for demonstration
-    nodes = [
-        {'id': 1, 'type': 'Market', 'lat': float(lat) + 0.02, 'lng': float(lng) + 0.02},
-        {'id': 2, 'type': 'Office', 'lat': float(lat) - 0.02, 'lng': float(lng) - 0.02},
-        # Add more nodes...
-    ]
+    """Get optimal locations for new CNG stations"""
+    try:
+        lat, lng = float(lat), float(lng)
+        radius_km = float(request.args.get('radius', 10.0))
+        num_stations = int(request.args.get('num_stations', 3))
+        
+        # Get time information
+        time_info = get_time_info()
+        
+        # Get optimal locations
+        optimal_locations = location_optimizer_instance.optimize_station_locations(
+            center_lat=lat,
+            center_lng=lng,
+            radius_km=radius_km,
+            num_stations=num_stations,
+            time_info=time_info
+        )
+        
+        # Format response
+        candidates = []
+        for i, location in enumerate(optimal_locations):
+            candidates.append({
+                'id': f"optimal_{i+1}",
+                'name': f"Recommended CNG Station {i+1}",
+                'position': {'lat': location['lat'], 'lng': location['lng']},
+                'area_type': location['area_type'],
+                'total_score': round(location['total_score'], 3),
+                'demand_score': round(location['demand_score'], 3),
+                'accessibility_score': round(location['accessibility_score'], 3),
+                'economic_score': round(location['economic_score'], 3),
+                'competition_score': round(location['competition_score'], 3),
+                'distance_from_center': round(location['distance_from_center'], 2),
+                'recommendation_reason': _get_recommendation_reason(location)
+            })
+        
+        return jsonify({
+            'candidates': candidates,
+            'center': {'lat': lat, 'lng': lng},
+            'radius_km': radius_km,
+            'num_stations': num_stations,
+            'time_info': time_info
+        })
+        
+    except Exception as e:
+        print(f"Error in get_optimal_locations: {e}")
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/analyze-location/<lat>/<lng>')
+def analyze_location(lat, lng):
+    """Analyze a specific location for CNG station placement"""
+    try:
+        lat, lng = float(lat), float(lng)
+        time_info = get_time_info()
+        
+        # Calculate individual scores
+        demand_score = location_optimizer_instance.calculate_demand_score(lat, lng, time_info)
+        accessibility_score = location_optimizer_instance.calculate_accessibility_score(lat, lng)
+        
+        # Determine area type
+        area_type = location_optimizer_instance._classify_area_type(lat, lng)
+        economic_score = location_optimizer_instance.calculate_economic_viability(lat, lng, area_type)
+        competition_score = location_optimizer_instance.calculate_competition_score(lat, lng)
+        
+        # Calculate total score
+        total_score = (
+            0.3 * demand_score +
+            0.25 * accessibility_score +
+            0.25 * economic_score +
+            0.2 * competition_score
+        )
+        
+        # Find nearby existing stations
+        nearby_stations = []
+        for station in location_optimizer_instance.existing_stations:
+            distance = location_optimizer_instance._haversine_distance(lat, lng, station['lat'], station['lng'])
+            if distance <= 5.0:  # Within 5km
+                nearby_stations.append({
+                    'name': station['name'],
+                    'distance_km': round(distance, 2),
+                    'utilization': round(station['utilization'], 3),
+                    'wait_time': station['wait_time_overall'],
+                    'arrivals_per_hour': station['overall_arrivals']
+                })
+        
+        # Sort by distance
+        nearby_stations.sort(key=lambda x: x['distance_km'])
+        
+        return jsonify({
+            'location': {'lat': lat, 'lng': lng},
+            'area_type': area_type,
+            'scores': {
+                'total_score': round(total_score, 3),
+                'demand_score': round(demand_score, 3),
+                'accessibility_score': round(accessibility_score, 3),
+                'economic_score': round(economic_score, 3),
+                'competition_score': round(competition_score, 3)
+            },
+            'nearby_stations': nearby_stations[:5],  # Top 5 nearest
+            'recommendation': _get_location_recommendation(total_score),
+            'time_info': time_info
+        })
+        
+    except Exception as e:
+        print(f"Error in analyze_location: {e}")
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/api/station-demand-analysis')
+def station_demand_analysis():
+    """Analyze demand patterns across all existing stations"""
+    try:
+        if not location_optimizer_instance.existing_stations:
+            return jsonify({'error': 'No station data available'}), 400
+        
+        # Analyze demand patterns
+        stations_data = []
+        for station in location_optimizer_instance.existing_stations:
+            stations_data.append({
+                'name': station['name'],
+                'position': {'lat': station['lat'], 'lng': station['lng']},
+                'morning_arrivals': station['morning_arrivals'],
+                'evening_arrivals': station['evening_arrivals'],
+                'overall_arrivals': station['overall_arrivals'],
+                'utilization': round(station['utilization'], 3),
+                'wait_time_overall': station['wait_time_overall'],
+                'rush_pattern': station['rush_pattern'],
+                'servers': station['servers']
+            })
+        
+        # Calculate statistics
+        total_stations = len(stations_data)
+        avg_utilization = np.mean([s['utilization'] for s in stations_data])
+        avg_demand = np.mean([s['overall_arrivals'] for s in stations_data])
+        high_demand_stations = [s for s in stations_data if s['overall_arrivals'] > avg_demand * 1.5]
+        high_utilization_stations = [s for s in stations_data if s['utilization'] > 0.8]
+        
+        return jsonify({
+            'total_stations': total_stations,
+            'statistics': {
+                'avg_utilization': round(avg_utilization, 3),
+                'avg_demand': round(avg_demand, 3),
+                'high_demand_count': len(high_demand_stations),
+                'high_utilization_count': len(high_utilization_stations)
+            },
+            'stations': stations_data,
+            'high_demand_stations': high_demand_stations[:10],  # Top 10
+            'high_utilization_stations': high_utilization_stations[:10]  # Top 10
+        })
+        
+    except Exception as e:
+        print(f"Error in station_demand_analysis: {e}")
+        return jsonify({'error': str(e)}), 400
+
+def _get_recommendation_reason(location):
+    """Generate a human-readable recommendation reason"""
+    scores = {
+        'demand': location['demand_score'],
+        'accessibility': location['accessibility_score'],
+        'economic': location['economic_score'],
+        'competition': location['competition_score']
+    }
     
-    # Dummy VSF matrix
-    vsf_matrix = np.random.rand(len(nodes), len(nodes))
+    # Find the highest scoring factor
+    best_factor = max(scores, key=scores.get)
+    best_score = scores[best_factor]
     
-    candidates = location_optimizer.get_candidate_locations(nodes, vsf_matrix)
+    reasons = {
+        'demand': f"High demand potential (score: {best_score:.2f}) - good location for customer volume",
+        'accessibility': f"Excellent accessibility (score: {best_score:.2f}) - well-positioned for easy access",
+        'economic': f"Strong economic viability (score: {best_score:.2f}) - profitable location",
+        'competition': f"Low competition (score: {best_score:.2f}) - less saturated market"
+    }
     
-    return jsonify({'candidates': candidates})
+    return reasons.get(best_factor, "Good overall location for CNG station placement")
+
+def _get_location_recommendation(total_score):
+    """Get recommendation based on total score"""
+    if total_score >= 0.8:
+        return "Excellent location - highly recommended for CNG station"
+    elif total_score >= 0.6:
+        return "Good location - recommended with some considerations"
+    elif total_score >= 0.4:
+        return "Moderate location - consider carefully before proceeding"
+    else:
+        return "Poor location - not recommended for CNG station"
 
 @app.route('/nearby-stations')
 def nearby_stations():
@@ -439,6 +613,12 @@ def ev_switcher():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     return render_template('cng_switch_soon.html', username=session.get('username'))
+
+@app.route('/location-optimizer')
+def location_optimizer():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('location_optimizer.html', username=session.get('username'))
 
 @app.route('/api/route-plan', methods=['POST'])
 def plan_route():
