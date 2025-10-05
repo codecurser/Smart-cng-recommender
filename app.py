@@ -653,5 +653,11 @@ def stations_from_file():
         status = 400 if 'not found' not in data['error'].lower() else 404
     return jsonify(data), status
 
+@app.route('/location-optimizer')
+def location_optimizer():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('location_optimizer.html', username=session.get('username'))
+
 if __name__ == '__main__':
     app.run(debug=True)
