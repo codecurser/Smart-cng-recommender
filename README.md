@@ -116,11 +116,11 @@ We welcome contributions! Please follow these steps:
 
 ## 👥 Team
 
-- **Aryan Sharma** - Developer - [LinkedIn](https://www.linkedin.com/in/adhax)
-- **Abhishek Gaur** - Developer - [LinkedIn](https://www.linkedin.com/in/krish-goyal)
-- **Anand Mishra** - UI/UX Designer - [LinkedIn](https://www.linkedin.com/in/aryan-sharma-9a84142bb)
-- **Aparna Pandey** - Developer - [LinkedIn](www.linkedin.com/in/aparna-pandeyy)
-- **Vishal Dubey** - Research Analyst - [LinkedIn](https://www.linkedin.com/in/vishal-dubey-8218052a6)
+- **Aryan Sharma** - Developer  
+- **Abhishek Gaur** - Developer 
+- **Anand Mishra** - UI/UX Designer
+- **Aparna Pandey** - Developer
+- **Vishal Dubey** - Research Analys
 
 ## 📄 License
 
